@@ -1,0 +1,6 @@
+{
+  "name": "Beauty Guau",
+  "description": "Sistema de gestión de turnos para peluquerías caninas y reserva para clientes con agenda y control de horarios.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
