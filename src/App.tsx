@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Business, Pet, Role, ScreenMode, SizeKey, Turno, TurnoStatus } from './types';
 import {
   hoursUntil,
@@ -14,24 +14,135 @@ import { NegocioView } from './components/NegocioView';
 import { ClienteView } from './components/ClienteView';
 import { RescheduleModal } from './components/RescheduleModal';
 
+const STORAGE_KEYS = {
+  BUSINESSES: 'beauty_guau_businesses_v1',
+  PETS: 'beauty_guau_pets_v1',
+  TURNOS: 'beauty_guau_turnos_v1',
+  CLIENT: 'beauty_guau_client_v1',
+};
+
 export default function App() {
   const [screenMode, setScreenMode] = useState<ScreenMode>('role_select');
   const [currentRole, setCurrentRole] = useState<Role | null>(null);
 
-  // Business state
-  const [businesses, setBusinesses] = useState<Business[]>(INITIAL_BUSINESSES);
+  // Business state with localStorage
+  const [businesses, setBusinesses] = useState<Business[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.BUSINESSES);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Error reading businesses from localStorage', e);
+    }
+    return INITIAL_BUSINESSES;
+  });
   const [currentBiz, setCurrentBiz] = useState<Business | null>(null);
 
-  // Client state
-  const [currentClient, setCurrentClient] = useState<string>('Ana Gómez');
-  const [currentClientPhone, setCurrentClientPhone] = useState<string>('11 5555-0101');
-  const [allPets, setAllPets] = useState<Record<string, Pet[]>>(INITIAL_CLIENT_PETS);
+  // Client state with localStorage
+  const [currentClient, setCurrentClient] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CLIENT);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.name) return parsed.name;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return 'Ana Gómez';
+  });
+  const [currentClientPhone, setCurrentClientPhone] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CLIENT);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.phone) return parsed.phone;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return '11 5555-0101';
+  });
+  const [allPets, setAllPets] = useState<Record<string, Pet[]>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PETS);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Error reading pets from localStorage', e);
+    }
+    return INITIAL_CLIENT_PETS;
+  });
 
-  // Turnos state
-  const [turnos, setTurnos] = useState<Turno[]>(INITIAL_TURNOS);
+  // Turnos state with localStorage
+  const [turnos, setTurnos] = useState<Turno[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.TURNOS);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Error reading turnos from localStorage', e);
+    }
+    return INITIAL_TURNOS;
+  });
+
+  // Persist to localStorage whenever state changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [businesses]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.PETS, JSON.stringify(allPets));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [allPets]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.TURNOS, JSON.stringify(turnos));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [turnos]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEYS.CLIENT,
+        JSON.stringify({ name: currentClient, phone: currentClientPhone })
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }, [currentClient, currentClientPhone]);
 
   // Rescheduling modal state
   const [reschedulingTurnoId, setReschedulingTurnoId] = useState<number | null>(null);
+
+  // Helper to reset data
+  const handleResetData = () => {
+    if (window.confirm('¿Deseas restablecer todos los turnos, mascotas y datos a los valores iniciales de demostración?')) {
+      try {
+        localStorage.removeItem(STORAGE_KEYS.BUSINESSES);
+        localStorage.removeItem(STORAGE_KEYS.PETS);
+        localStorage.removeItem(STORAGE_KEYS.TURNOS);
+        localStorage.removeItem(STORAGE_KEYS.CLIENT);
+      } catch (e) {
+        console.error(e);
+      }
+      setBusinesses(INITIAL_BUSINESSES);
+      setAllPets(INITIAL_CLIENT_PETS);
+      setTurnos(INITIAL_TURNOS);
+      setCurrentClient('Ana Gómez');
+      setCurrentClientPhone('11 5555-0101');
+      setCurrentBiz(null);
+      setCurrentRole(null);
+      setScreenMode('role_select');
+    }
+  };
 
   // Helper for pets
   const getPetsForClient = (clientName: string): Pet[] => {
@@ -164,6 +275,7 @@ export default function App() {
               setScreenMode('cliente_login');
             }
           }}
+          onResetData={handleResetData}
         />
       )}
 
